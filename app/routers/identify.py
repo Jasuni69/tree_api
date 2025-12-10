@@ -11,7 +11,7 @@ from app.config import settings
 router = APIRouter(prefix="/api/v1", tags=["identify"])
 
 reid_service = ReIDService(settings.reid_model_path)
-health_service = HealthService(settings.health_model_path)
+health_service = HealthService(settings.health_model_dir)
 gallery_service = GalleryService()
 
 
