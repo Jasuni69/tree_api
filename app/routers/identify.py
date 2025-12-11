@@ -59,14 +59,14 @@ def validate_image(contents: bytes, image: Image.Image) -> None:
 @router.post("/identify", response_model=IdentifyResponse)
 async def identify_tree(
     file: UploadFile = File(...),
-    use_tta: bool = Query(True, description="Use Test-Time Augmentation (slower but more accurate)"),
     threshold: float = Query(None, ge=0.0, le=1.0, description="Similarity threshold (default from config)"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Identify tree from uploaded photo.
 
-    - **use_tta**: Enable TTA for better accuracy (~4x slower)
+    Uses Test-Time Augmentation (TTA) for best accuracy.
+
     - **threshold**: Minimum similarity score to consider a match (0.0-1.0)
 
     Returns matched tree ID (if found) + health assessment.
@@ -88,7 +88,7 @@ async def identify_tree(
         # Extract embedding
         embed_start = time.time()
         preprocessed = reid_service.preprocess_image(image)
-        query_embedding = reid_service.extract_embedding(preprocessed, use_tta=use_tta)
+        query_embedding = reid_service.extract_embedding(preprocessed, use_tta=True)
         embed_time = time.time() - embed_start
 
         # Find match in gallery
@@ -137,17 +137,16 @@ async def identify_tree(
 async def identify_tree_topk(
     file: UploadFile = File(...),
     k: int = Query(5, ge=1, le=20, description="Number of top matches to return"),
-    use_tta: bool = Query(True, description="Use Test-Time Augmentation"),
     threshold: float = Query(None, ge=0.0, le=1.0, description="Minimum similarity threshold"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get top K matching trees for an image.
 
+    Uses Test-Time Augmentation (TTA) for best accuracy.
     Useful when confidence is borderline or you want to show alternatives.
 
     - **k**: Number of matches to return (1-20)
-    - **use_tta**: Enable TTA for better accuracy
     - **threshold**: Only return matches above this similarity
     """
     start_time = time.time()
@@ -162,7 +161,7 @@ async def identify_tree_topk(
 
         # Extract embedding
         preprocessed = reid_service.preprocess_image(image)
-        query_embedding = reid_service.extract_embedding(preprocessed, use_tta=use_tta)
+        query_embedding = reid_service.extract_embedding(preprocessed, use_tta=True)
 
         # Get top K matches
         matches = await gallery_service.get_top_k_matches(query_embedding, db, k=k)
