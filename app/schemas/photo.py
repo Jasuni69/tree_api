@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
@@ -34,3 +34,18 @@ class IdentifyResponse(BaseModel):
     confidence: Optional[float] = None
     health_assessment: Optional[HealthAssessment] = None
     message: str
+    processing_time_ms: Optional[int] = None
+
+
+class TopKMatch(BaseModel):
+    """Single match result in top-K response."""
+    tree_id: int
+    confidence: float
+    rank: int
+
+
+class TopKResponse(BaseModel):
+    """Response for top-K matching endpoint."""
+    matches: List[TopKMatch]
+    total_candidates: int
+    processing_time_ms: int

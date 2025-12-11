@@ -18,7 +18,8 @@ class GalleryService:
     async def find_best_match(
         self,
         query_embedding: np.ndarray,
-        db: AsyncSession
+        db: AsyncSession,
+        threshold: float = None
     ) -> Optional[Tuple[int, float]]:
         """
         Find best matching tree using pgvector cosine similarity.
@@ -26,17 +27,19 @@ class GalleryService:
         Args:
             query_embedding: Embedding vector of query image
             db: Database session
+            threshold: Minimum similarity threshold (default from config)
 
         Returns:
             Tuple of (tree_id, similarity_score) or None if no match above threshold
         """
         # Convert to list for pgvector
         embedding_list = query_embedding.tolist()
+        min_threshold = threshold if threshold is not None else self.similarity_threshold
 
         # pgvector cosine distance: <=> operator (0 = identical, 2 = opposite)
         # Convert to similarity: 1 - (distance / 2)
         query = text("""
-            SELECT 
+            SELECT
                 tree_id,
                 1 - (embedding <=> :embedding) / 2 as similarity
             FROM photos
@@ -48,7 +51,7 @@ class GalleryService:
         result = await db.execute(query, {"embedding": str(embedding_list)})
         row = result.fetchone()
 
-        if row and row.similarity >= self.similarity_threshold:
+        if row and row.similarity >= min_threshold:
             return (row.tree_id, float(row.similarity))
 
         return None
