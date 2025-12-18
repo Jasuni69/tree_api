@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     reid_model_path: str = "./models/reid/best_model.pth"  # ConvNeXt
     swin_model_path: str = "./models/reid/swin_model.pth"  # Swin (for ensemble)
     health_model_dir: str = "./models/health"
+    detail_model_path: str = "./models/health/detail_model.pth"  # Detail classifier
 
     # Ensemble config
     use_ensemble: bool = False  # ConvNeXt+TTA beats ensemble (80.07% vs 78.23%)

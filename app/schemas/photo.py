@@ -12,6 +12,19 @@ class HealthAssessment(BaseModel):
     error: Optional[str] = None
 
 
+class DetailPrediction(BaseModel):
+    """Single detail label prediction."""
+    prediction: str
+    confidence: float
+    all_probabilities: Dict[str, float]
+
+
+class DetailAssessment(BaseModel):
+    """Detail labels assessment (conditional on health predictions)."""
+    details: Dict[str, DetailPrediction]
+    error: Optional[str] = None
+
+
 class PhotoBase(BaseModel):
     captured_at: Optional[datetime] = None
 
@@ -43,6 +56,7 @@ class IdentifyResponse(BaseModel):
     tree_id: Optional[int] = None
     confidence: Optional[float] = None
     health_assessment: Optional[HealthAssessment] = None
+    detail_assessment: Optional[DetailAssessment] = None
     message: str
     processing_time_ms: Optional[int] = None
 

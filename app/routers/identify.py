@@ -7,8 +7,8 @@ import logging
 from typing import List
 
 from app.database import get_db
-from app.schemas.photo import IdentifyResponse, HealthAssessment, TopKMatch, TopKResponse
-from app.services import ReIDService, HealthService, GalleryService
+from app.schemas.photo import IdentifyResponse, HealthAssessment, DetailAssessment, TopKMatch, TopKResponse
+from app.services import ReIDService, HealthService, GalleryService, DetailService
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["identify"])
 
 reid_service = ReIDService(settings.reid_model_path)
 health_service = HealthService(settings.health_model_dir)
+detail_service = DetailService(settings.detail_model_path)
 gallery_service = GalleryService()
 
 # Image validation constants
@@ -69,7 +70,7 @@ async def identify_tree(
 
     - **threshold**: Minimum similarity score to consider a match (0.0-1.0)
 
-    Returns matched tree ID (if found) + health assessment.
+    Returns matched tree ID (if found) + health assessment + detail assessment.
     """
     start_time = time.time()
 
@@ -105,8 +106,17 @@ async def identify_tree(
         health_assessment = HealthAssessment(**health_data)
         health_time = time.time() - health_start
 
+        # Assess details (conditional on health predictions)
+        detail_start = time.time()
+        detail_assessment = None
+        if detail_service.load_model():
+            detail_data = detail_service.assess_details(image, health_data['predictions'])
+            if detail_data.get('details'):
+                detail_assessment = DetailAssessment(**detail_data)
+        detail_time = time.time() - detail_start
+
         total_time = time.time() - start_time
-        logger.info(f"Identify request: embed={embed_time:.3f}s, search={search_time:.3f}s, health={health_time:.3f}s, total={total_time:.3f}s")
+        logger.info(f"Identify request: embed={embed_time:.3f}s, search={search_time:.3f}s, health={health_time:.3f}s, detail={detail_time:.3f}s, total={total_time:.3f}s")
 
         if match_result:
             tree_id, confidence = match_result
@@ -115,6 +125,7 @@ async def identify_tree(
                 tree_id=tree_id,
                 confidence=confidence,
                 health_assessment=health_assessment,
+                detail_assessment=detail_assessment,
                 message=f"Tree matched with confidence {confidence:.2f}",
                 processing_time_ms=int(total_time * 1000)
             )
@@ -122,6 +133,7 @@ async def identify_tree(
             return IdentifyResponse(
                 matched=False,
                 health_assessment=health_assessment,
+                detail_assessment=detail_assessment,
                 message="No matching tree found in gallery",
                 processing_time_ms=int(total_time * 1000)
             )
