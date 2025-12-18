@@ -1,0 +1,26 @@
+{
+  "models": [
+    "D:\\1\\tree_health\\ml_workspace\\models\\beast_efficientnet_b3_seed42.pth",
+    "D:\\1\\tree_health\\ml_workspace\\models\\beast_efficientnet_b3_seed123.pth",
+    "D:\\1\\tree_health\\ml_workspace\\models\\beast_efficientnet_b3_seed456.pth"
+  ],
+  "results": [
+    {
+      "seed": 42,
+      "val_acc": 0.8465116279069768,
+      "tta_acc": 0.8604651162790697
+    },
+    {
+      "seed": 123,
+      "val_acc": 0.8651162790697674,
+      "tta_acc": 0.8682170542635659
+    },
+    {
+      "seed": 456,
+      "val_acc": 0.8682170542635659,
+      "tta_acc": 0.8635658914728682
+    }
+  ],
+  "avg_val_acc": 0.8599483204134367,
+  "avg_tta_acc": 0.8640826873385014
+}
