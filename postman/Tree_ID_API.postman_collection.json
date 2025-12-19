@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "Tree ID API",
+    "description": "Tree Identification & Health Assessment API\n\nEndpoints for:\n- Tree re-identification (matching trees across photos)\n- Health assessment (irrigation bag, tree status, supports, etc.)\n- Detail classification (bag fill level, issue types)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "health"]
+        },
+        "description": "Check if API is running and healthy"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"status\": \"healthy\",\n  \"service\": \"tree-identification-api\",\n  \"version\": \"1.0.0\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Identify Tree",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Tree image (JPEG, PNG, WEBP, BMP). Max 10MB."
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/identify?threshold=0.7",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "identify"],
+          "query": [
+            {
+              "key": "threshold",
+              "value": "0.7",
+              "description": "Minimum similarity score (0.0-1.0). Optional, defaults to 0.7"
+            }
+          ]
+        },
+        "description": "Identify a tree from an uploaded photo.\n\nReturns:\n- Tree match (if found) with confidence score\n- Health assessment (5 labels)\n- Detail assessment (conditional on health predictions)"
+      },
+      "response": [
+        {
+          "name": "Tree Matched",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"matched\": true,\n  \"tree_id\": 2,\n  \"confidence\": 0.9998,\n  \"health_assessment\": {\n    \"probabilities\": {\n      \"irrigation_bag\": 0.8394,\n      \"tree_status\": 0.894,\n      \"tree_supports\": 0.873,\n      \"support_ropes\": 0.894,\n      \"tree_base\": 0.5063\n    },\n    \"predictions\": {\n      \"irrigation_bag\": true,\n      \"tree_status\": true,\n      \"tree_supports\": true,\n      \"support_ropes\": true,\n      \"tree_base\": false\n    },\n    \"confidence\": {\n      \"irrigation_bag\": 0.8394,\n      \"tree_status\": 0.894,\n      \"tree_supports\": 0.873,\n      \"support_ropes\": 0.894,\n      \"tree_base\": 0.4937\n    },\n    \"overall_confidence\": 0.4937,\n    \"error\": null\n  },\n  \"detail_assessment\": {\n    \"details\": {\n      \"irrigation_bag_fill\": {\n        \"prediction\": \"100% Full\",\n        \"confidence\": 0.8428,\n        \"all_probabilities\": {\n          \"100% Full\": 0.8428,\n          \"75% Full\": 0.1511,\n          \"50% Full\": 0.0056,\n          \"25% Full\": 0.0006,\n          \"0% Empty\": 0.0001\n        }\n      },\n      \"tree_base_issue\": {\n        \"prediction\": \"Weeds\",\n        \"confidence\": 0.7402,\n        \"all_probabilities\": {\n          \"Weeds\": 0.7402,\n          \"Debris\": 0.2498,\n          \"Trash\": 0.0098\n        }\n      }\n    },\n    \"error\": null\n  },\n  \"message\": \"Tree matched with confidence 1.00\",\n  \"processing_time_ms\": 5308\n}"
+        },
+        {
+          "name": "No Match Found",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"matched\": false,\n  \"tree_id\": null,\n  \"confidence\": null,\n  \"health_assessment\": {\n    \"probabilities\": {\n      \"irrigation_bag\": 0.12,\n      \"tree_status\": 0.95,\n      \"tree_supports\": 0.88,\n      \"support_ropes\": 0.76,\n      \"tree_base\": 0.82\n    },\n    \"predictions\": {\n      \"irrigation_bag\": false,\n      \"tree_status\": true,\n      \"tree_supports\": true,\n      \"support_ropes\": true,\n      \"tree_base\": true\n    },\n    \"confidence\": {\n      \"irrigation_bag\": 0.88,\n      \"tree_status\": 0.95,\n      \"tree_supports\": 0.88,\n      \"support_ropes\": 0.76,\n      \"tree_base\": 0.82\n    },\n    \"overall_confidence\": 0.76,\n    \"error\": null\n  },\n  \"detail_assessment\": null,\n  \"message\": \"No matching tree found in gallery\",\n  \"processing_time_ms\": 4200\n}"
+        }
+      ]
+    },
+    {
+      "name": "Identify Tree - Top K Matches",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "",
+              "description": "Tree image (JPEG, PNG, WEBP, BMP). Max 10MB."
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/identify/topk?k=5&threshold=0.5",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "identify", "topk"],
+          "query": [
+            {
+              "key": "k",
+              "value": "5",
+              "description": "Number of top matches to return (1-20)"
+            },
+            {
+              "key": "threshold",
+              "value": "0.5",
+              "description": "Minimum similarity threshold. Optional."
+            }
+          ]
+        },
+        "description": "Get top K matching trees for an image.\n\nUseful when:\n- Confidence is borderline\n- You want to show alternatives to the user\n- Debugging match quality"
+      },
+      "response": [
+        {
+          "name": "Top K Results",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"matches\": [\n    {\n      \"tree_id\": 2,\n      \"confidence\": 0.9998,\n      \"rank\": 1\n    },\n    {\n      \"tree_id\": 15,\n      \"confidence\": 0.7234,\n      \"rank\": 2\n    },\n    {\n      \"tree_id\": 8,\n      \"confidence\": 0.6891,\n      \"rank\": 3\n    },\n    {\n      \"tree_id\": 42,\n      \"confidence\": 0.6543,\n      \"rank\": 4\n    },\n    {\n      \"tree_id\": 27,\n      \"confidence\": 0.5892,\n      \"rank\": 5\n    }\n  ],\n  \"total_candidates\": 5,\n  \"processing_time_ms\": 3200\n}"
+        }
+      ]
+    },
+    {
+      "name": "Root",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "API root - shows available endpoints"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Tree Identification & Health Assessment API\",\n  \"docs\": \"/docs\",\n  \"health\": \"/api/v1/health\"\n}"
+        }
+      ]
+    }
+  ]
+}
